@@ -11,6 +11,7 @@
 		"express": "^4.17.1",
 		"moment-timezone": "^0.5.26",
 		"request": "^2.88.0",
+		"request-promise-native": "^1.0.7",
 		"sqlite3": "^4.0.9"
 	},
 	"keywords": [

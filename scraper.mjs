@@ -1,28 +1,15 @@
-import request from 'request'
+import request from 'request-promise-native'
 import cheerio from 'cheerio'
-import sqlite3 from 'sqlite3'
 
-const initDatabase = callback => {
-	let db = new (sqlite3.verbose()).Database('renfe.sqlite')
+import ZONES from './static/zones.json'
 
-	db.serialize(() => {
-		db.run('CREATE TABLE IF NOT EXISTS cercanias_zones (id ID)')
-		callback(db)
-	})
-}
+const BASE_STATIONS_URL =
+	'http://horarios.renfe.com/cer/hjcer300.jsp?CP=NO&I=s&NUCLEO='
+const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp?'
 
-const updateRow = (db, value) => {
-	const statement = db.prepare('INSERT INTO cercanias VALUES (?)')
-	statement.run(value)
-	statement.finalize()
-}
+const zoneStationURL = id => `${BASE_STATIONS_URL}${id}`
 
-const readRows = db => {
-	db.each('SELECT rowid AS id, name FROM data', (err, row) => {
-		console.log(`${row.id}: ${row.name}`)
-	})
-}
-
+// Scraping
 const fetchPage = (url, callback) => {
 	request(url, (error, response, body) => {
 		if (error) {
@@ -34,20 +21,44 @@ const fetchPage = (url, callback) => {
 	})
 }
 
-const run = db =>
-	fetchPage('', body => {
-		const $ = cheerio.load(body)
+const scrapStations = body => {
+	const $ = cheerio.load(body)
 
-		let elements = $('div.media-body span.p-name').each(function() {
-			let value = $(this)
-				.text()
-				.trim()
-			updateRow(db, value)
+	const options = $('select[name=o]').find('option')
+
+	return options
+		.map((i, element) => {
+			let option = $(element),
+				id = option.attr('value'),
+				name = option.text().trim()
+
+			return id === '?' ? null : { id, name }
 		})
+		.filter(element => element != null)
+		.get()
+}
 
-		readRows(db)
+// Get stations list
+const getStations = async zone => {
+	const URL = zoneStationURL(zone.id)
+	const body = await request(URL)
+	const stations = scrapStations(body)
+	return stations
+}
 
-		db.close()
-	})
+const getAllStations = async () =>
+	await Promise.all(
+		ZONES.map(async zone => {
+			return {
+				zone: zone,
+				stations: await getStations(zone),
+			}
+		})
+	)
 
-initDatabase(run)
+getAllStations().then(data => {
+	const json = JSON.stringify(data)
+	console.log(json)
+})
+
+// Get trips
