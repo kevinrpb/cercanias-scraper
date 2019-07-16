@@ -3,12 +3,12 @@
 	"main": "server.mjs",
 	"scripts": {
 		"start": "node --experimental-modules server.mjs",
-		"scrap": "node --experimental-modules scraper.mjs",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"dependencies": {
 		"cheerio": "^1.0.0-rc.3",
 		"express": "^4.17.1",
+		"iconv": "^2.3.4",
 		"moment-timezone": "^0.5.26",
 		"request": "^2.88.0",
 		"request-promise-native": "^1.0.7",

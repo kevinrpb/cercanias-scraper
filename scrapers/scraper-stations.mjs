@@ -1,25 +1,16 @@
 import request from 'request-promise-native'
 import cheerio from 'cheerio'
+import iconv from 'iconv'
 
 import ZONES from './static/zones.json'
+
+import fs from 'fs'
 
 const BASE_STATIONS_URL =
 	'http://horarios.renfe.com/cer/hjcer300.jsp?CP=NO&I=s&NUCLEO='
 const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp?'
 
 const zoneStationURL = id => `${BASE_STATIONS_URL}${id}`
-
-// Scraping
-const fetchPage = (url, callback) => {
-	request(url, (error, response, body) => {
-		if (error) {
-			console.log(`Error requesting page: ${error}`)
-			return
-		}
-
-		callback(body)
-	})
-}
 
 const scrapStations = body => {
 	const $ = cheerio.load(body)
@@ -38,11 +29,17 @@ const scrapStations = body => {
 		.get()
 }
 
-// Get stations list
 const getStations = async zone => {
-	const URL = zoneStationURL(zone.id)
-	const body = await request(URL)
-	const stations = scrapStations(body)
+	const body = await request({
+		url: zoneStationURL(zone.id),
+		encoding: null
+	})
+
+	const ic = new iconv.Iconv('iso-8859-1', 'utf-8');
+	const buf = ic.convert(body);
+	const utf8Body = buf.toString('utf-8');
+
+	const stations = scrapStations(utf8Body)
 	return stations
 }
 
@@ -56,9 +53,4 @@ const getAllStations = async () =>
 		})
 	)
 
-getAllStations().then(data => {
-	const json = JSON.stringify(data)
-	console.log(json)
-})
-
-// Get trips
+export default { getAllStations }
