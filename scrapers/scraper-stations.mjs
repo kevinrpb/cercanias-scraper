@@ -1,47 +1,47 @@
-import request from 'request-promise-native'
-import cheerio from 'cheerio'
-import iconv from 'iconv'
+import request from 'request-promise-native';
+import cheerio from 'cheerio';
+import iconv from 'iconv';
 
-import ZONES from './static/zones.json'
+import ZONES from '../static/zones.json';
 
-import fs from 'fs'
+import fs from 'fs';
 
 const BASE_STATIONS_URL =
-	'http://horarios.renfe.com/cer/hjcer300.jsp?CP=NO&I=s&NUCLEO='
-const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp?'
+	'http://horarios.renfe.com/cer/hjcer300.jsp?CP=NO&I=s&NUCLEO=';
+const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp?';
 
-const zoneStationURL = id => `${BASE_STATIONS_URL}${id}`
+const zoneStationURL = id => `${BASE_STATIONS_URL}${id}`;
 
 const scrapStations = body => {
-	const $ = cheerio.load(body)
+	const $ = cheerio.load(body);
 
-	const options = $('select[name=o]').find('option')
+	const options = $('select[name=o]').find('option');
 
 	return options
 		.map((i, element) => {
 			let option = $(element),
 				id = option.attr('value'),
-				name = option.text().trim()
+				name = option.text().trim();
 
-			return id === '?' ? null : { id, name }
+			return id === '?' ? null : { id, name };
 		})
 		.filter(element => element != null)
-		.get()
-}
+		.get();
+};
 
 const getStations = async zone => {
 	const body = await request({
 		url: zoneStationURL(zone.id),
-		encoding: null
-	})
+		encoding: null,
+	});
 
 	const ic = new iconv.Iconv('iso-8859-1', 'utf-8');
 	const buf = ic.convert(body);
 	const utf8Body = buf.toString('utf-8');
 
-	const stations = scrapStations(utf8Body)
-	return stations
-}
+	const stations = scrapStations(utf8Body);
+	return stations;
+};
 
 const getAllStations = async () =>
 	await Promise.all(
@@ -49,8 +49,8 @@ const getAllStations = async () =>
 			return {
 				zone: zone,
 				stations: await getStations(zone),
-			}
+			};
 		})
-	)
+	);
 
-export default { getAllStations }
+export default { getAllStations };
