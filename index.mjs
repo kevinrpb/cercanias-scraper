@@ -51,6 +51,10 @@ const getTrips = async (date) => {
 	return tripList
 }
 
+const getAllTrips = async () => {
+	
+}
+
 const scrap = async () => {
 
 	let database = {
@@ -59,13 +63,11 @@ const scrap = async () => {
 		tripList: []
 	}
 
-	// 4. Get trips
-
-
-	// 5. Save DB
+	// TODO: Get trips
 
 	return database
 }
 
 
+export { getZones, getStations, getTrips, scrap }
 export default scrap;

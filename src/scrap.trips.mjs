@@ -15,7 +15,7 @@ const scrapTrips = body => {
 	return []
 }
 
-const getTrips = async (zone, origin, destination, date) => {
+const getTrips = async ({ zone, origin, destination }, date) => {
 	const body = await request({
 		method: 'POST',
 		url: BASE_TRIP_URL,
@@ -34,27 +34,47 @@ const getTrips = async (zone, origin, destination, date) => {
 	const buf = ic.convert(body)
 	const utf8Body = buf.toString('utf-8')
 
-	const trips = scrapTrips(utf8Body)
-	return trips
+	return scrapTrips(utf8Body)
 }
 
-const getAllTrips = async (date) => {
+const getZoneDateTrips = async (zoneID, date) => {
+	let combinations = []
+
+	for (let station1 of STATIONS) {
+		for (let station2 of STATIONS) {
+			if (station1.zoneID === station2.zoneID &&
+				station1.zoneID === zoneID &&
+				station1.stationID !== station2.zoneID
+			) {
+				combinations.push({
+					'zone': zoneID,
+					'origin': station1.stationID,
+					'destination': station2.stationID,
+					'date': date
+				})
+			}
+		}
+	}
+
 	return await Promise.all(
-		STATIONS.flatMap(async (zoneID1, stationID1, stationName1) => {
-			await STATIONS.map(async (zoneID2, stationID2, stationName2) => {
-				if (zoneID1 === zoneID2 && stationID1 !== stationID2) {
-					return {
-						zone: zoneID1,
-						origin: stationID1,
-						destination: stationID2,
-						trips: await getTrips(zoneID1, stationID1, stationID2, date)
-					}
-				} else {
-					return null
-				}
-			})
+		combinations.map(async combination => {
+			return {
+				...combination,
+				'trips': await getTrips(combination, date)
+			}
 		})
 	)
 }
 
-export default { getAllTrips }
+const getDateTrips = async (date) => {
+	return await Promise.all(
+		ZONES.map(async zone => getZoneDateTrips(zone, date))
+	)
+}
+
+const getAllTrips = async () => {
+	// TODO:
+}
+
+
+export { getAllTrips, getDateTrips, getZoneDateTrips, getTrips }
