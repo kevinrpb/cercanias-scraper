@@ -4,15 +4,37 @@ import iconv from 'iconv'
 
 import STATIONS from '../static/stations.json'
 
-const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp'
+const BASE_TRIP_URL = 'http://horarios.renfe.com/cer/hjcer310.jsp?I=i'
+
+const scrapHeader = thead => {
+	// TODO: Scrap header info to get transfers
+
+	return {
+
+	}
+}
+
+const scrapTrip = (header, row) => {
+	// TODO: Scrap row body info to get times and transfers that apply
+
+	return {
+
+	}
+}
 
 const scrapTrips = body => {
 	const $ = cheerio.load(body)
 
-	console.log($)
+	const table = $('table')
+	const thead = table.children('thead')
+	const tbody = table.children('tbody')
 
-	//TODO: scrap
-	return []
+	const header = scrapHeader(thead)
+	const rows = tbody.children('tr')
+
+	const trips = rows.map(row => scrapTrip(header, row))
+
+	return trips
 }
 
 const getTrips = async ({ zone, origin, destination }, date) => {
@@ -22,11 +44,14 @@ const getTrips = async ({ zone, origin, destination }, date) => {
 		encoding: null,
 		form: {
 			'nucleo': zone,
-			'i': 'i',
-			'cp': 'NO',
-			'o': origin,
-			'd': destination,
-			'df': date
+			'i':      'i',
+			'cp':     'NO',
+			'o':       origin,
+			'd':       destination,
+			'df':      date,
+			'ho':      '00',
+			'hd':      '26',
+			'TXTInfo': ''
 		}
 	})
 
@@ -49,8 +74,7 @@ const getZoneDateTrips = async (zoneID, date) => {
 				combinations.push({
 					'zone': zoneID,
 					'origin': station1.stationID,
-					'destination': station2.stationID,
-					'date': date
+					'destination': station2.stationID
 				})
 			}
 		}

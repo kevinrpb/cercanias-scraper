@@ -50,4 +50,4 @@ const getAllStations = async () =>
 		})
 	)
 
-export default { getAllStations }
+export default getAllStations
